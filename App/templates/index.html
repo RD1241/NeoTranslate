@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Neural Translator AI</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="cyber-bg"></div>
+
+<div class="container">
+
+    <div class="header">
+        <h1>⚡ Neural Translator AI</h1>
+        <button onclick="toggleTheme()" class="theme-btn">🌙</button>
+    </div>
+
+    <div class="row">
+
+        <div class="column">
+            <div class="lang-header">
+                <label>Input Language</label>
+                <button type="button" onclick="swapLanguages()" class="swap-btn">🔄</button>
+            </div>
+
+            <select id="source_lang">
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+                <option value="pa">Punjabi</option>
+            </select>
+
+            <textarea id="input_text" placeholder="Enter text..."></textarea>
+        </div>
+
+        <div class="column">
+            <label>Target Language</label>
+
+            <select id="target_lang">
+                <option value="hi">Hindi</option>
+                <option value="pa">Punjabi</option>
+                <option value="en">English</option>
+            </select>
+
+            <textarea id="output_text" readonly></textarea>
+        </div>
+
+    </div>
+
+    <button onclick="translateText()" class="translate-btn">Translate ⚡</button>
+
+    <div id="thinking" class="thinking">
+        🧠 AI thinking<span class="dots"></span>
+    </div>
+
+    <!-- Hidden field used by JS to extract translation -->
+    <input type="hidden" id="hidden_translation" value="{{ translation if translation else '' }}">
+
+</div>
+
+<script>
+
+function swapLanguages() {
+    let source = document.getElementById("source_lang");
+    let target = document.getElementById("target_lang");
+    let temp = source.value;
+    source.value = target.value;
+    target.value = temp;
+}
+
+function toggleTheme() {
+    document.body.classList.toggle("light-mode");
+}
+
+function typeWriter(text) {
+    let output = document.getElementById("output_text");
+    output.value = "";
+    let i = 0;
+
+    function typing() {
+        if (i < text.length) {
+            output.value += text.charAt(i);
+            i++;
+            setTimeout(typing, 20);
+        }
+    }
+
+    typing();
+}
+
+async function translateText() {
+
+    let inputText = document.getElementById("input_text").value;
+    let sourceLang = document.getElementById("source_lang").value;
+    let targetLang = document.getElementById("target_lang").value;
+
+    if (!inputText.trim()) return;
+
+    document.getElementById("thinking").style.display = "block";
+
+    const response = await fetch("/translate", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: `source_lang=${sourceLang}&target_lang=${targetLang}&input_text=${encodeURIComponent(inputText)}`
+    });
+
+    const resultHTML = await response.text();
+
+    document.getElementById("thinking").style.display = "none";
+
+    // Extract translation from returned HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(resultHTML, "text/html");
+    const translatedText = doc.querySelector("#hidden_translation")?.value || "";
+
+    typeWriter(translatedText);
+}
+
+</script>
+
+</body>
+</html>
